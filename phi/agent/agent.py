@@ -1346,11 +1346,18 @@ class Agent(BaseModel):
                     logger.warning("Reasoning error. Reasoning response is empty, continuing regular session...")
                     break
 
-                if reasoning_agent_response.content.reasoning_steps is None:
-                    logger.warning("Reasoning error. Reasoning steps are empty, continuing regular session...")
+                if reasoning_agent_response.content is None:
+                    logger.warning("Reasoning error. Reasoning response is empty, continuing regular session...")
                     break
-
-                reasoning_steps: List[ReasoningStep] = reasoning_agent_response.content.reasoning_steps
+                
+                if isinstance(reasoning_agent_response.content, str):
+                    reasoning_steps = [ReasoningStep(result=reasoning_agent_response.content)]
+                else:
+                    if reasoning_agent_response.content.reasoning_steps is None:
+                        logger.warning("Reasoning error. Reasoning steps are empty, continuing regular session...")
+                        break    
+                    reasoning_steps: Union[List[ReasoningStep]] = reasoning_agent_response.content.reasoning_steps
+                
                 all_reasoning_steps.extend(reasoning_steps)
                 # -*- Yield reasoning steps
                 if stream_intermediate_steps:

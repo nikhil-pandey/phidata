@@ -13,7 +13,7 @@ from phi.utils.timer import Timer
 from phi.utils.tools import get_function_call_for_tool_call
 
 try:
-    from openai import OpenAI as OpenAIClient, AsyncOpenAI as AsyncOpenAIClient
+    from langfuse.openai import OpenAI as OpenAIClient, AsyncOpenAI as AsyncOpenAIClient
     from openai.types.completion_usage import CompletionUsage
     from openai.types.chat.chat_completion import ChatCompletion
     from openai.types.chat.parsed_chat_completion import ParsedChatCompletion
