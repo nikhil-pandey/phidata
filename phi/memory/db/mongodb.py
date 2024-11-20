@@ -18,6 +18,7 @@ class MongoMemoryDb(MemoryDb):
     def __init__(
         self,
         collection_name: str = "memory",
+        agent_name: str = "default",
         db_url: Optional[str] = None,
         db_name: str = "phi",
         client: Optional[MongoClient] = None,
@@ -41,6 +42,7 @@ class MongoMemoryDb(MemoryDb):
             raise ValueError("Must provide either db_url or client")
 
         self.collection_name: str = collection_name
+        self.agent_name: str = agent_name
         self.db_name: str = db_name
         self.db: Database = self._client[self.db_name]
         self.collection: Collection = self.db[self.collection_name]
@@ -50,6 +52,7 @@ class MongoMemoryDb(MemoryDb):
         try:
             # Create indexes
             self.collection.create_index("id", unique=True)
+            self.collection.create_index("agent_name")
             self.collection.create_index("user_id")
             self.collection.create_index("created_at")
         except PyMongoError as e:
@@ -58,7 +61,7 @@ class MongoMemoryDb(MemoryDb):
 
     def memory_exists(self, memory: MemoryRow) -> bool:
         try:
-            result = self.collection.find_one({"id": memory.id})
+            result = self.collection.find_one({"id": memory.id, "agent_name": self.agent_name})
             return result is not None
         except PyMongoError as e:
             logger.error(f"Error checking memory existence: {e}")
@@ -70,7 +73,7 @@ class MongoMemoryDb(MemoryDb):
         memories: List[MemoryRow] = []
         try:
             # Build query
-            query = {}
+            query = {"agent_name": self.agent_name}
             if user_id is not None:
                 query["user_id"] = user_id
 
@@ -109,7 +112,7 @@ class MongoMemoryDb(MemoryDb):
             }
 
             # For new documents, set created_at
-            query = {"id": memory.id}
+            query = {"id": memory.id, "agent_name": self.agent_name}
             doc = self.collection.find_one(query)
             if not doc:
                 update_data["created_at"] = timestamp
@@ -125,7 +128,7 @@ class MongoMemoryDb(MemoryDb):
 
     def delete_memory(self, id: str) -> None:
         try:
-            result = self.collection.delete_one({"id": id})
+            result = self.collection.delete_one({"id": id, "agent_name": self.agent_name})
             if result.deleted_count == 0:
                 logger.debug(f"No memory found with id: {id}")
             else:
